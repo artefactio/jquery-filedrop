@@ -299,31 +299,33 @@
                 }
               });
               filesRejected++;
-              return true;
+              
+            } else {
+
+            	reader.onerror = function(e) {
+            	    switch(e.target.error.code) {
+            	        case e.target.error.NOT_FOUND_ERR:
+            	            opts.error(errors[4]);
+            	            return false;
+            	        case e.target.error.NOT_READABLE_ERR:
+            	            opts.error(errors[5]);
+            	            return false;
+            	        case e.target.error.ABORT_ERR:
+            	            opts.error(errors[6]);
+            	            return false;
+            	        default:
+            	            opts.error(errors[7]);
+            	            return false;
+            	    };
+            	};
+            	
+            	reader.onloadend = !opts.beforeSend ? send : function (e) {
+            	  opts.beforeSend(files[fileIndex], fileIndex, function () { send(e); });
+            	};
+            	
+            	reader.readAsDataURL(files[fileIndex]);
+            	
             }
-
-            reader.onerror = function(e) {
-                switch(e.target.error.code) {
-                    case e.target.error.NOT_FOUND_ERR:
-                        opts.error(errors[4]);
-                        return false;
-                    case e.target.error.NOT_READABLE_ERR:
-                        opts.error(errors[5]);
-                        return false;
-                    case e.target.error.ABORT_ERR:
-                        opts.error(errors[6]);
-                        return false;
-                    default:
-                        opts.error(errors[7]);
-                        return false;
-                };
-            };
-
-            reader.onloadend = !opts.beforeSend ? send : function (e) {
-              opts.beforeSend(files[fileIndex], fileIndex, function () { send(e); });
-            };
-
-            reader.readAsDataURL(files[fileIndex]);
 
           } else {
             filesRejected++;
@@ -451,8 +453,9 @@
             globalProgress();
 
             if (filesDone === (files_count - filesRejected)) {
-              afterAll();
+              afterAll(filesDone);
             }
+
             if (result === false) {
               stop_loop = true;
             }
@@ -487,10 +490,10 @@
       return opts.beforeEach(file);
     }
 
-    function afterAll() {
-      return opts.afterAll();
+    function afterAll(i) {
+      return opts.afterAll(i);
     }
-
+    
     function dragEnter(e) {
       clearTimeout(doc_leave_timer);
       e.preventDefault();
